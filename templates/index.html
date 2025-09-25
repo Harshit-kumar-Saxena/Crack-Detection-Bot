@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Crack Detection System</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f0f2f5;
+        color: #333;
+      }
+
+      .top-bar {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+        padding: 15px 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-bottom: 1px solid #34495e;
+      }
+
+      .top-bar h1 {
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0;
+        letter-spacing: 0.5px;
+      }
+
+      .top-bar .subtitle {
+        font-size: 12px;
+        opacity: 0.8;
+        margin-top: 2px;
+        font-weight: 400;
+      }
+
+      .top-bar .status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #28a745;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+      }
+
+      .main-container {
+        display: flex;
+        height: calc(100vh - 70px);
+        overflow: hidden;
+      }
+
+      .container {
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      .video-section {
+        flex: 0.65;
+        background: #f8f9fa;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        padding: 15px;
+      }
+
+      .stats-header {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        justify-content: center;
+      }
+
+      .stat-card {
+        background: white;
+        color: #333;
+        padding: 20px 25px;
+        border-radius: 8px;
+        text-align: center;
+        min-width: 140px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-color: #007bff;
+      }
+
+      .stat-card h3 {
+        font-size: 11px;
+        margin-bottom: 8px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: #6c757d;
+      }
+
+      .stat-card .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 4px;
+        color: #212529;
+        line-height: 1;
+      }
+
+      .stat-card .stat-label {
+        font-size: 10px;
+        font-weight: 500;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .video-container {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+
+      .video-container {
+        position: relative;
+        max-width: 100%;
+        max-height: 100%;
+      }
+
+      .video-feed {
+        max-width: 100%;
+        max-height: 100%;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      }
+
+      .status-overlay {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 12px 18px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: bold;
+      }
+
+      .sidebar {
+        flex: 0.35;
+        background: white;
+        border-left: 1px solid #ddd;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        min-width: 400px;
+      }
+
+      .sidebar-header {
+        background: #2c3e50;
+        color: white;
+        padding: 20px;
+        text-align: center;
+      }
+
+      .sidebar-header h2 {
+        margin-bottom: 5px;
+      }
+
+      .sidebar-header p {
+        font-size: 14px;
+        opacity: 0.8;
+      }
+
+      .delete-section {
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        padding: 15px 20px;
+        transition: all 0.3s ease;
+      }
+
+      .delete-section h3 {
+        font-size: 14px;
+        color: #495057;
+        margin-bottom: 10px;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        user-select: none;
+      }
+
+      .delete-section h3:hover {
+        color: #007bff;
+      }
+
+      .delete-toggle {
+        font-size: 18px;
+        transition: transform 0.3s ease;
+      }
+
+      .delete-content {
+        overflow: hidden;
+        transition: all 0.3s ease;
+        max-height: 0;
+        opacity: 0;
+      }
+
+      .delete-content.expanded {
+        max-height: 200px;
+        opacity: 1;
+        margin-top: 10px;
+      }
+
+      .id-range {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .id-input {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        font-size: 12px;
+        background: white;
+      }
+
+      .delete-btn {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        width: 100%;
+      }
+
+      .delete-btn:hover {
+        background: linear-gradient(135deg, #c82333, #a71e2a);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+      }
+
+      .delete-btn:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .delete-confirmation {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 6px;
+        padding: 10px;
+        margin-top: 10px;
+        font-size: 12px;
+        color: #856404;
+        display: none;
+      }
+
+      .confirmation-buttons {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .confirm-btn {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 11px;
+      }
+
+      .cancel-btn {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 11px;
+      }
+
+      .detection-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+      }
+
+      .detection-item {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .detection-item:hover {
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+        border-color: #007bff;
+      }
+
+      .detection-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .detection-id {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        padding: 4px 10px;
+        border-radius: 16px;
+        font-size: 11px;
+        font-weight: bold;
+        box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+      }
+
+      .detection-time {
+        font-size: 10px;
+        color: #6c757d;
+        font-weight: 500;
+      }
+
+      .detection-content {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+
+      .detection-preview {
+        width: 180px;
+        height: 135px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        flex-shrink: 0;
+      }
+
+      .detection-stats {
+        flex: 0.6;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .stat-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 8px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        border: 1px solid #e9ecef;
+      }
+
+      .stat-label {
+        font-weight: 600;
+        color: #495057;
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .stat-value {
+        color: #212529;
+        font-weight: 700;
+        font-size: 11px;
+      }
+
+      .distance-stat {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+      }
+
+      .distance-stat .stat-label {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 9px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+      }
+
+      .distance-stat .stat-value {
+        color: white;
+        font-weight: 700;
+        font-size: 14px;
+      }
+
+      .no-detections {
+        text-align: center;
+        color: #6c757d;
+        padding: 40px 20px;
+      }
+
+      .error-message {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 15px;
+        margin: 20px;
+        border-radius: 5px;
+        border: 1px solid #f5c6cb;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6c757d;
+      }
+
+      .spinner {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #007bff;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 15px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .pagination {
+        display: flex;
+        justify-content: center;
+        padding: 20px;
+        border-top: 1px solid #ddd;
+      }
+
+      .pagination button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        margin: 0 5px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+
+      .pagination button:hover {
+        background: #0056b3;
+      }
+
+      .pagination button:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="top-bar">
+      <div>
+        <h1>🔍 In-Pipe Crack Detection Bot</h1>
+        <div class="subtitle">Real-time monitoring system for pipe inspection</div>
+      </div>
+      <div class="status-indicator">
+        <div class="status-dot"></div>
+        <span>System Active</span>
+      </div>
+    </div>
+    <div class="main-container">
+      <div class="video-section">
+        <div class="stats-header">
+          <div class="stat-card">
+            <h3>Total Cracks</h3>
+            <div class="stat-value" id="total-cracks">0</div>
+            <div class="stat-label">Detected</div>
+          </div>
+          <div class="stat-card">
+            <h3>Today's Cracks</h3>
+            <div class="stat-value" id="today-cracks">0</div>
+            <div class="stat-label">Detected</div>
+          </div>
+          <div class="stat-card">
+            <h3>Detection Rate</h3>
+            <div class="stat-value" id="detection-rate">0%</div>
+            <div class="stat-label">Success</div>
+          </div>
+          <div class="stat-card">
+            <h3>Arduino Distance</h3>
+            <div class="stat-value" id="arduino-distance">On serial Monitor</div>
+            <div class="stat-label">Real-time</div>
+          </div>
+          <div class="stat-card">
+            <h3>System Status</h3>
+            <div class="stat-value" id="system-status">Active</div>
+            <div class="stat-label">Monitoring</div>
+          </div>
+        </div>
+        <div class="video-container">
+          <img
+            src="{{ url_for('video_feed') }}"
+            class="video-feed"
+            alt="Live Feed"
+          />
+          <div class="status-overlay" id="status-overlay">
+            <div id="camera-status">Camera: Initializing...</div>
+            <div id="model-status">Model: Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <h2>Crack Detection</h2>
+          <p>Real-time monitoring system</p>
+        </div>
+
+        <div class="delete-section">
+          <h3 onclick="toggleDeleteSection()">
+            Delete Data
+            <span class="delete-toggle" id="delete-toggle">▼</span>
+          </h3>
+          <div class="delete-content" id="delete-content">
+            <div class="id-range">
+              <input
+                type="number"
+                id="start-id"
+                class="id-input"
+                placeholder="Start ID"
+                min="1"
+              />
+              <input
+                type="number"
+                id="end-id"
+                class="id-input"
+                placeholder="End ID"
+                min="1"
+              />
+            </div>
+            <button
+              id="delete-btn"
+              class="delete-btn"
+              onclick="showDeleteConfirmation()"
+            >
+              Delete Range
+            </button>
+            <div id="delete-confirmation" class="delete-confirmation">
+              <div>
+                Are you sure you want to delete all detections from ID
+                <span id="confirm-start"></span> to ID
+                <span id="confirm-end"></span>?
+              </div>
+              <div class="confirmation-buttons">
+                <button class="confirm-btn" onclick="confirmDelete()">
+                  Yes, Delete
+                </button>
+                <button class="cancel-btn" onclick="cancelDelete()">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="detection-list" id="detection-list">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading detections...</p>
+          </div>
+        </div>
+
+        <div class="pagination" id="pagination" style="display: none">
+          <button id="prev-btn" onclick="previousPage()">Previous</button>
+          <span id="page-info">Page 1</span>
+          <button id="next-btn" onclick="nextPage()">Next</button>
+        </div>
+      </div>
+    </div>
+    </div>
+
+    <script>
+      let currentPage = 1;
+      let totalPages = 1;
+      let detections = [];
+
+      // Update status overlay
+      function updateStatus() {
+        fetch("/api/errors")
+          .then((response) => response.json())
+          .then((data) => {
+            const cameraStatus = document.getElementById("camera-status");
+            const modelStatus = document.getElementById("model-status");
+
+            if (data.camera_error) {
+              cameraStatus.innerHTML = `Camera: <span style="color: #dc3545;">Error - ${data.camera_error}</span>`;
+            } else {
+              cameraStatus.innerHTML =
+                'Camera: <span style="color: #28a745;">Connected</span>';
+            }
+
+            if (data.model_error) {
+              modelStatus.innerHTML = `Model: <span style="color: #dc3545;">Error - ${data.model_error}</span>`;
+            } else {
+              modelStatus.innerHTML =
+                'Model: <span style="color: #28a745;">Loaded</span>';
+            }
+          })
+          .catch((error) => {
+            console.error("Error fetching status:", error);
+          });
+      }
+
+      // Load detections
+      function loadDetections() {
+        fetch("/api/detections")
+          .then((response) => response.json())
+          .then((data) => {
+            detections = data.detections;
+            totalPages = Math.ceil(data.total / 10);
+            displayDetections();
+            updatePagination();
+          })
+          .catch((error) => {
+            console.error("Error loading detections:", error);
+            document.getElementById("detection-list").innerHTML =
+              '<div class="error-message">Error loading detections. Please refresh the page.</div>';
+          });
+      }
+
+      // Display detections
+      function displayDetections() {
+        const container = document.getElementById("detection-list");
+
+        if (detections.length === 0) {
+          container.innerHTML =
+            '<div class="no-detections">No detections found yet.</div>';
+          return;
+        }
+
+        container.innerHTML = detections
+          .map(
+            (detection) => `
+                <div class="detection-item">
+                    <div class="detection-header">
+                        <span class="detection-id">#${detection.id}</span>
+                        <span class="detection-time">${formatTime(
+                          detection.timestamp,
+                        )}</span>
+                    </div>
+                    <div class="detection-content">
+                        <img src="/static/screenshots/${detection.filename}" 
+                             class="detection-preview" 
+                             alt="Detection Preview"
+                             onerror="this.style.display='none'">
+                        <div class="detection-stats">
+                            <div class="distance-stat">
+                                <div class="stat-label">Distance</div>
+                                <div class="stat-value">${
+                                  detection.distance ? detection.distance.toFixed(1) + "m" : "100.0m"
+                                }</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Confidence</div>
+                                <div class="stat-value">${
+                                  detection.confidence
+                                    ? (detection.confidence * 100).toFixed(1) + "%"
+                                    : "N/A"
+                                }</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Cracks Found</div>
+                                <div class="stat-value">${
+                                  detection.total_detections
+                                }</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Class</div>
+                                <div class="stat-value">${
+                                  detection.class_name || "crack-in-pipe"
+                                }</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">File</div>
+                                <div class="stat-value">${detection.filename}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+          )
+          .join("");
+      }
+
+      // Format timestamp
+      function formatTime(timestamp) {
+        const date = new Date(timestamp);
+        return date.toLocaleString();
+      }
+
+      // Update pagination
+      function updatePagination() {
+        const pagination = document.getElementById("pagination");
+        const pageInfo = document.getElementById("page-info");
+        const prevBtn = document.getElementById("prev-btn");
+        const nextBtn = document.getElementById("next-btn");
+
+        if (totalPages > 1) {
+          pagination.style.display = "flex";
+          pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+          prevBtn.disabled = currentPage === 1;
+          nextBtn.disabled = currentPage === totalPages;
+        } else {
+          pagination.style.display = "none";
+        }
+      }
+
+      // Navigation functions
+      function previousPage() {
+        if (currentPage > 1) {
+          currentPage--;
+          loadDetections();
+        }
+      }
+
+      function nextPage() {
+        if (currentPage < totalPages) {
+          currentPage++;
+          loadDetections();
+        }
+      }
+
+      // Toggle delete section
+      function toggleDeleteSection() {
+        const deleteContent = document.getElementById('delete-content');
+        const deleteToggle = document.getElementById('delete-toggle');
+        
+        if (deleteContent.classList.contains('expanded')) {
+          deleteContent.classList.remove('expanded');
+          deleteToggle.textContent = '▼';
+          deleteToggle.style.transform = 'rotate(0deg)';
+        } else {
+          deleteContent.classList.add('expanded');
+          deleteToggle.textContent = '▲';
+          deleteToggle.style.transform = 'rotate(180deg)';
+        }
+      }
+
+      // Delete functionality
+      function showDeleteConfirmation() {
+        const startId = document.getElementById("start-id").value;
+        const endId = document.getElementById("end-id").value;
+
+        if (!startId || !endId) {
+          alert("Please enter both start and end IDs.");
+          return;
+        }
+
+        if (parseInt(startId) > parseInt(endId)) {
+          alert("Start ID cannot be greater than end ID.");
+          return;
+        }
+
+        if (parseInt(startId) < 1) {
+          alert("Start ID must be at least 1.");
+          return;
+        }
+
+        document.getElementById("confirm-start").textContent = startId;
+        document.getElementById("confirm-end").textContent = endId;
+        document.getElementById("delete-confirmation").style.display = "block";
+        document.getElementById("delete-btn").disabled = true;
+      }
+
+      function cancelDelete() {
+        document.getElementById("delete-confirmation").style.display = "none";
+        document.getElementById("delete-btn").disabled = false;
+      }
+
+      function confirmDelete() {
+        const startId = document.getElementById("start-id").value;
+        const endId = document.getElementById("end-id").value;
+
+        fetch("/api/delete-range", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            start_id: parseInt(startId),
+            end_id: parseInt(endId),
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              alert(`Successfully deleted ${data.deleted_count} detections.`);
+              // Clear the ID inputs
+              document.getElementById("start-id").value = "";
+              document.getElementById("end-id").value = "";
+              // Reload detections
+              loadDetections();
+            } else {
+              alert("Error: " + data.error);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Error deleting data. Please try again.");
+          })
+          .finally(() => {
+            cancelDelete();
+          });
+      }
+
+            // Update statistics
+      function updateStats() {
+        fetch("/api/stats")
+          .then((response) => response.json())
+          .then((data) => {
+            document.getElementById("total-cracks").textContent =
+              data.total_cracks;
+            document.getElementById("today-cracks").textContent =
+              data.today_cracks;
+            document.getElementById("detection-rate").textContent =
+              data.detection_rate + "%";
+
+            // Update system status based on camera and model status
+            const cameraStatus =
+              document.getElementById("camera-status").textContent;
+            const modelStatus =
+              document.getElementById("model-status").textContent;
+
+            if (
+              cameraStatus.includes("Connected") &&
+              modelStatus.includes("Loaded")
+            ) {
+              document.getElementById("system-status").textContent = "Active";
+              document.getElementById("system-status").style.color = "#28a745";
+
+              // Update top bar status
+              const statusDot = document.querySelector(".status-dot");
+              const statusText = document.querySelector(".status-indicator span");
+              statusDot.style.background = "#28a745";
+              statusText.textContent = "System Active";
+            } else {
+              document.getElementById("system-status").textContent = "Warning";
+              document.getElementById("system-status").style.color = "#ffc107";
+
+              // Update top bar status
+              const statusDot = document.querySelector(".status-dot");
+              const statusText = document.querySelector(".status-indicator span");
+              statusDot.style.background = "#ffc107";
+              statusText.textContent = "System Warning";
+            }
+          })
+          .catch((error) => {
+            console.error("Error fetching stats:", error);
+          });
+      }
+
+      // Update Arduino distance
+      function updateArduinoDistance() {
+        fetch("/api/arduino-distance")
+          .then((response) => response.json())
+          .then((data) => {
+            const distanceElement = document.getElementById("arduino-distance");
+            if (data.connected) {
+              distanceElement.textContent = data.distance.toFixed(1) + "m";
+              distanceElement.style.color = "#28a745";
+            } else {
+              distanceElement.textContent = "100.0m";
+              distanceElement.style.color = "#6c757d";
+            }
+          })
+          .catch((error) => {
+            console.error("Error fetching Arduino distance:", error);
+            document.getElementById("arduino-distance").textContent = "100.0m";
+            document.getElementById("arduino-distance").style.color = "#6c757d";
+          });
+      }
+
+      // Initialize
+      document.addEventListener("DOMContentLoaded", function () {
+        loadDetections();
+        updateStatus();
+        updateStats();
+        updateArduinoDistance();
+
+        // Refresh data every 5 seconds
+        setInterval(() => {
+          loadDetections();
+          updateStatus();
+          updateStats();
+        }, 5000);
+
+        // Refresh Arduino distance every 2 seconds (more frequent for real-time data)
+        setInterval(() => {
+          updateArduinoDistance();
+        }, 2000);
+      });
+    </script>
+  </body>
+</html>

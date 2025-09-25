@@ -1,0 +1,13 @@
+train: ../images/train
+val: ../images/valid
+test: ../images/test
+
+nc: 1
+names: ['crack-in-pipe']
+
+roboflow:
+  workspace: crack-detection-zfmxp
+  project: total_images_crack-ndrqe
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/crack-detection-zfmxp/total_images_crack-ndrqe/dataset/1

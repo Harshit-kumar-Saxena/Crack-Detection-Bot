@@ -10,6 +10,7 @@ from flask_sqlalchemy import SQLAlchemy
 import threading
 import queue
 import base64
+import re
 from io import BytesIO
 from PIL import Image
 import serial
@@ -25,7 +26,7 @@ if platform.system() == "Windows":
     output_dir = os.path.join(base_path, "crack_screenshots")
     db_path = os.path.join(base_path, "crack_detection.db")
 else:
-    base_path = "/home/harshitji/vscode/python/main-pr"
+    base_path = "/home/harshit/vscode/python/main-pr"
     weights_path = os.path.join(base_path, "yolov4-tiny-custom_final.weights")
     config_path = os.path.join(base_path, "yolov4-tiny-custom.cfg")
     names_path = os.path.join(base_path, "obj.names")
@@ -88,7 +89,7 @@ class Detection(db.Model):
             'total_detections': self.total_detections,
             'bbox_data': json.loads(self.bbox_data) if self.bbox_data else [],
             'class_name': self.class_name,
-            'distance': self.distance if hasattr(self, 'distance') else 100.0
+            'distance': self.distance if hasattr(self, 'distance') else 1.0
         }
 
 class CrackDetector:
@@ -139,7 +140,7 @@ class CrackDetector:
         global camera_error
         try:
             # Try different camera indices for external webcam
-            for camera_index in [0, 1, 2]:
+            for camera_index in [0]:
                 print(f"Trying camera index {camera_index}...")
                 self.cap = cv2.VideoCapture(camera_index)
                 if self.cap.isOpened():
@@ -380,19 +381,23 @@ def arduino_reader():
             time.sleep(1)  # Wait before retrying
 
 def get_arduino_distance():
-    """Get distance value from Arduino data"""
     global latest_arduino_data
-    
+
     try:
         with arduino_lock:
-            if latest_arduino_data:
-                # Try to parse the Arduino data as a float (distance in meters)
-                distance = float(latest_arduino_data)
-                return distance
+            if not latest_arduino_data:
+                return 100.0
+
+            # Extract floating number from string
+            match = re.search(r"([\d.]+)", latest_arduino_data)
+            if match:
+                distance_cm = float(match.group(1))
+                return distance_cm / 100.0  # convert cm → meters
             else:
-                return 100.0  # Default fallback
-    except (ValueError, TypeError):
-        # If Arduino data is not a valid number, return default
+                return 100.0
+
+    except Exception as e:
+        print("Distance parse error:", e)
         return 100.0
 
 def start_arduino_reader():
@@ -565,7 +570,7 @@ def get_arduino_distance_api():
         
     except Exception as e:
         return jsonify({
-            'distance': 100.0,
+            'distance': 1.0,
             'connected': False,
             'error': str(e),
             'timestamp': datetime.now().isoformat()

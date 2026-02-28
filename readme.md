@@ -1,7 +1,5 @@
-# AI-Powered Crack Detection Bot 
-
-This project is an automated system designed for real-time structural health monitoring. It utilizes a custom-trained **YOLOv4-Tiny** model, **OpenCV**, and a **Flask-based Web Dashboard** to detect and log structural cracks. The bot integrates with an **Arduino Nano** and use a encoder and servo motor for distance sensing, angle finding and automatically captures screenshots and logs metadata (confidence, distance, timestamp) to a database for structural analysis.
-
+## AI-Powered Crack Detection Bot 
+This project is an automated system designed for real-time structural health monitoring. It utilizes a custom-trained **YOLOv4-Tiny** model, **OpenCV**, and a **Flask-based Web Dashboard** to detect and log structural cracks. The bot integrates with an **Arduino Nano** and use a encoder and servo motor for distance sensing, angle finding and automatically captures screenshots and logs metadata (confidence, distance, timestamp) to a database for structural analysis. The system features an adaptive pipe-diameter mechanism, allowing the robot to automatically adjust itself based on the pipe diameter through its unique mechanical design.
 ---
 
 ## Media
